@@ -8,6 +8,7 @@
     "start": "node server.mjs",
     "bundle": "python3 shader-skills/skills/shader-art-coding/scripts/glsl_tools.py bundle shaders/film.glsl -o public/shader.glsl",
     "check": "python3 shader-skills/skills/shader-art-coding/scripts/glsl_tools.py check shaders/film.glsl public/shader.glsl",
-    "build": "npm run bundle && npm run check"
+    "build": "npm run bundle && npm run check",
+    "deploy": "firebase deploy --only hosting"
   }
 }

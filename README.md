@@ -1,5 +1,7 @@
 # Gemini Video 2 GLSL
 
+**Live Demo:** [https://gemini-shader-test-carbon.web.app](https://gemini-shader-test-carbon.web.app)
+
 A fun, unattended one-shot experiment showing what **Gemini 4 Carbon** (running on high) can build end-to-end from a single specification ([docs/spec.md](docs/spec.md)):
 
 1. **Generate a 5-scene film** (Space, Forest, Ocean, Desert, Cavern) at 720p 16:9 using [`gemini-api`](https://github.com/google-gemini/gemini-api-cli) and cut the clips into a seamless 25-second looping film with cross-dissolves.

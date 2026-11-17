@@ -2,3 +2,6 @@
 node_modules/
 __pycache__/
 *.pyc
+.firebase/
+firebase-debug.log
+public/raw_clips/
