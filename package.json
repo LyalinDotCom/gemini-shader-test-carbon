@@ -6,7 +6,7 @@
   "description": "Five-scene Gemini Omni 1.2 Flash film recreated as one procedural Shadertoy GLSL shader.",
   "scripts": {
     "start": "node server.mjs",
-    "bundle": "python3 shader-skills/skills/shader-art-coding/scripts/glsl_tools.py bundle shaders/film.glsl -o public/shader.glsl",
+    "bundle": "python3 scripts/assemble_shader.py && python3 shader-skills/skills/shader-art-coding/scripts/glsl_tools.py bundle shaders/film.glsl -o public/shader.glsl",
     "check": "python3 shader-skills/skills/shader-art-coding/scripts/glsl_tools.py check shaders/film.glsl public/shader.glsl",
     "build": "npm run bundle && npm run check",
     "deploy": "firebase deploy --only hosting"
