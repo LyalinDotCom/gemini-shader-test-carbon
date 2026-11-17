@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gemini Video 2 GLSL</title>
   <meta name="description" content="Side-by-side and wipe comparison of a five-scene Gemini video film recreated as a single procedural Shadertoy GLSL shader." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0b0c'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23e59a3c' stroke-width='2.5'/%3E%3Cpath d='M16 7a9 9 0 0 1 0 18Z' fill='%23e59a3c' fill-opacity='0.28'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -34,11 +35,36 @@
           <div id="pane-film" class="stage-pane pane-film">
             <video id="film-video" src="/film.mp4" loop playsinline preload="auto"></video>
             <span class="pane-badge badge-left">Film</span>
+            <span id="film-size-badge" class="size-badge size-badge-film" title="public/film.mp4 — 15,559,867 bytes (25s 720p H.264 MP4)">
+              <span class="size-val">15.6 MB</span><span class="size-sep">·</span><span class="size-dim">MP4</span>
+            </span>
           </div>
 
           <div id="pane-shader" class="stage-pane pane-shader">
             <canvas id="shader-canvas" width="1280" height="720" aria-label="Live procedural GLSL shader"></canvas>
+            <div id="shader-loading" class="shader-loading" role="status" aria-live="polite" aria-label="Compiling procedural GLSL shader">
+              <div class="shader-loading-inner">
+                <div class="shader-spinner-wrap" aria-hidden="true">
+                  <svg class="shader-spinner" width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <circle class="shader-spinner-track" cx="14" cy="14" r="11" stroke-width="1.75" />
+                    <path class="shader-spinner-arc" d="M14 3A11 11 0 0 1 25 14" stroke-width="1.75" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <div id="shader-loading-stage" class="shader-loading-stage">Fetching procedural GLSL…</div>
+                <div class="shader-loading-track" aria-hidden="true">
+                  <div id="shader-loading-bar" class="shader-loading-bar"></div>
+                </div>
+                <div class="shader-loading-meta">
+                  <span class="shader-loading-sub">8,383-line procedural GLSL</span>
+                  <span class="shader-loading-dot" aria-hidden="true">·</span>
+                  <span id="shader-loading-time" class="shader-loading-time">0.0s</span>
+                </div>
+              </div>
+            </div>
             <span class="pane-badge badge-right">GLSL</span>
+            <span id="shader-size-badge" class="size-badge size-badge-shader" title="public/shader.glsl — 405,073 bytes raw / 123,188 bytes gzipped (38.4× smaller than film.mp4)">
+              <span class="size-line-main"><span class="size-val">405 KB</span> <span class="size-dim">(123 KB gzip)</span></span><span class="size-sep">·</span><span class="size-accent">38× smaller</span>
+            </span>
           </div>
 
           <div id="wipe-divider" class="wipe-divider" role="slider" tabindex="0" aria-label="Wipe comparison divider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
@@ -107,11 +133,19 @@
       </section>
 
       <section class="originals-section" aria-labelledby="originals-heading">
-        <h2 id="originals-heading" class="section-heading">Original Videos</h2>
+        <div class="originals-header">
+          <h2 id="originals-heading" class="section-heading">Original Videos</h2>
+          <div id="originals-size-pill" class="originals-size-pill" title="5 source MP4 clips: 30,910,557 bytes total vs. 1 procedural GLSL shader: 405,073 bytes raw (123,188 bytes gzipped)">
+            <span>5 raw clips: <strong class="pill-strong">30.9 MB</strong> total</span>
+            <span class="size-sep">vs.</span>
+            <span>1 shader: <strong class="pill-accent">405 KB</strong> <span class="size-dim">(123 KB gzip)</span></span>
+          </div>
+        </div>
         <div class="originals-grid">
           <button type="button" class="clip-card is-active" id="clip-card-0" data-scene="0" data-time="0">
             <div class="clip-frame">
               <video src="/raw_clips/01_space.mp4" muted loop playsinline preload="metadata"></video>
+              <span class="clip-size-badge" title="raw_clips/01_space.mp4 — 3,736,566 bytes">3.7 MB</span>
             </div>
             <div class="clip-meta">
               <span class="clip-num">I</span>
@@ -122,6 +156,7 @@
           <button type="button" class="clip-card" id="clip-card-1" data-scene="1" data-time="5">
             <div class="clip-frame">
               <video src="/raw_clips/02_forest.mp4" muted loop playsinline preload="metadata"></video>
+              <span class="clip-size-badge" title="raw_clips/02_forest.mp4 — 10,734,981 bytes">10.7 MB</span>
             </div>
             <div class="clip-meta">
               <span class="clip-num">II</span>
@@ -132,6 +167,7 @@
           <button type="button" class="clip-card" id="clip-card-2" data-scene="2" data-time="10">
             <div class="clip-frame">
               <video src="/raw_clips/03_ocean.mp4" muted loop playsinline preload="metadata"></video>
+              <span class="clip-size-badge" title="raw_clips/03_ocean.mp4 — 5,528,046 bytes">5.5 MB</span>
             </div>
             <div class="clip-meta">
               <span class="clip-num">III</span>
@@ -142,6 +178,7 @@
           <button type="button" class="clip-card" id="clip-card-3" data-scene="3" data-time="15">
             <div class="clip-frame">
               <video src="/raw_clips/04_desert.mp4" muted loop playsinline preload="metadata"></video>
+              <span class="clip-size-badge" title="raw_clips/04_desert.mp4 — 4,921,211 bytes">4.9 MB</span>
             </div>
             <div class="clip-meta">
               <span class="clip-num">IV</span>
@@ -152,6 +189,7 @@
           <button type="button" class="clip-card" id="clip-card-4" data-scene="4" data-time="20">
             <div class="clip-frame">
               <video src="/raw_clips/05_cavern.mp4" muted loop playsinline preload="metadata"></video>
+              <span class="clip-size-badge" title="raw_clips/05_cavern.mp4 — 5,989,753 bytes">6.0 MB</span>
             </div>
             <div class="clip-meta">
               <span class="clip-num">V</span>

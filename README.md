@@ -114,6 +114,8 @@ Open `http://localhost:3000` (or set `PORT=8080 npm start`).
 | **Dissolve V → I (Loop)** | `24.625s` | **50.1 – 53.5 fps** | `18.70 – 19.95 ms` |
 
 - **Live Playback (`requestAnimationFrame`):** **60 fps** display-locked across the full 25-second loop.
+- **Async Parallel Shader Compile:** `public/app.js` yields initial UI paint before touching WebGL and compiles `public/shader.glsl` non-blockingly via `KHR_parallel_shader_compile` (`COMPLETION_STATUS_KHR` polling) behind a dark stage/elapsed loading overlay.
+- **Asset Footprint:** `public/film.mp4` is `15.6 MB` (`15,559,867` bytes) and the five source clips total `30.9 MB` (`30,910,557` bytes), recreated in a single `405 KB` (`405,073` bytes raw / `123 KB` gzipped — `38.4×` smaller raw, `126.3×` smaller gzipped) procedural `public/shader.glsl`.
 - **Shader Validation:** `glsl_tools.py check` with `glslangValidator` compiled `shaders/film.glsl` (`7,435` lines) and `public/shader.glsl` (`8,383` lines) cleanly across all `DEBUG_MODE = 0..6` variants with **`0 error(s), 0 warning(s)`**.
 - **Timeline & Orbit Notes:**
   - Source clips (`10.03s`, `1280×720`, 24 fps) were trimmed to `5.75s` windows and joined with `0.75s` linear cross-dissolves (`24.25s – 25.00s` dissolves Scene V seamlessly back into Scene I's `0.00s` frame for an exact 600-frame `25.000s` loop).

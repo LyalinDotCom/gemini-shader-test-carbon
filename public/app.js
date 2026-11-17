@@ -38,6 +38,10 @@ void main() {
 
 const filmVideo = document.getElementById('film-video');
 const shaderCanvas = document.getElementById('shader-canvas');
+const shaderLoading = document.getElementById('shader-loading');
+const shaderLoadingStage = document.getElementById('shader-loading-stage');
+const shaderLoadingBar = document.getElementById('shader-loading-bar');
+const shaderLoadingTime = document.getElementById('shader-loading-time');
 const stageViewport = document.getElementById('stage-viewport');
 const modeSbsBtn = document.getElementById('mode-sbs-btn');
 const modeWipeBtn = document.getElementById('mode-wipe-btn');
@@ -66,11 +70,15 @@ let dragStartClientY = 0;
 let dragBaseOffsetX = 0;
 let dragBaseOffsetY = 0;
 
-// WebGL2 state
+// WebGL2 & async compilation state
 let gl = null;
 let program = null;
 let vao = null;
 let uniforms = {};
+let shaderReady = false;
+let isCompiling = true;
+let compileStageFloor = 0.08;
+const compileStartPerf = performance.now();
 let frameIndex = 0;
 let lastWallTime = performance.now();
 let smoothedFps = 60.0;
@@ -329,20 +337,60 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// WebGL2 initialization & Shadertoy uniform feed
-function compileShader(glCtx, type, source) {
-  const sh = glCtx.createShader(type);
-  glCtx.shaderSource(sh, source);
-  glCtx.compileShader(sh);
-  if (!glCtx.getShaderParameter(sh, glCtx.COMPILE_STATUS)) {
-    const info = glCtx.getShaderInfoLog(sh);
-    glCtx.deleteShader(sh);
-    throw new Error(info || 'Shader compilation failed');
+// Async non-blocking WebGL2 initialization & Shadertoy uniform feed
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+const yieldTwoFrames = () =>
+  new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+function setLoadingStage(label, floorPct) {
+  if (shaderLoadingStage) {
+    shaderLoadingStage.textContent = label;
   }
-  return sh;
+  if (typeof floorPct === 'number') {
+    compileStageFloor = Math.max(compileStageFloor, floorPct);
+  }
 }
 
+function tickLoadingOverlay(now) {
+  if (!isCompiling) return;
+  const elapsedSec = Math.max(0, (now - compileStartPerf) * 0.001);
+  if (shaderLoadingTime) {
+    shaderLoadingTime.textContent = `${elapsedSec.toFixed(1)}s`;
+  }
+  if (shaderLoadingBar) {
+    const asym = 1 - Math.exp(-elapsedSec / 3.4);
+    const pct = Math.max(compileStageFloor, Math.min(0.95, 0.08 + asym * 0.84));
+    shaderLoadingBar.style.transform = `scaleX(${pct.toFixed(4)})`;
+  }
+  requestAnimationFrame(tickLoadingOverlay);
+}
+
+window.__shaderStudio = {
+  ready: false,
+  compiling: true,
+  seekTo,
+  setViewMode,
+  setWipePercent,
+};
+
+requestAnimationFrame(tickLoadingOverlay);
+
 async function initShader() {
+  setLoadingStage('Fetching procedural GLSL…', 0.08);
+  const shaderFetchPromise = fetch('/shader.glsl', { cache: 'no-cache' });
+
+  // Guarantee the entire page shell, videos, badges, and loading overlay paint first (<50ms)
+  await yieldTwoFrames();
+
+  const res = await shaderFetchPromise;
+  if (!res.ok) {
+    throw new Error(`Failed to load /shader.glsl (${res.status})`);
+  }
+  const bundledSource = await res.text();
+
+  setLoadingStage('Compiling 5-scene shader on GPU…', 0.16);
+  await yieldTwoFrames();
+
   gl = shaderCanvas.getContext('webgl2', {
     alpha: false,
     antialias: false,
@@ -355,27 +403,57 @@ async function initShader() {
     throw new Error('WebGL2 is not available in this browser.');
   }
 
-  const res = await fetch('/shader.glsl', { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error(`Failed to load /shader.glsl (${res.status})`);
-  }
-  const bundledSource = await res.text();
+  const parallelExt = gl.getExtension('KHR_parallel_shader_compile');
+  await nextFrame();
+
   const fragSource = SHADERTOY_PRELUDE + bundledSource + SHADERTOY_EPILOGUE;
 
-  const vs = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SRC);
-  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragSource);
+  // Dispatch shader compilation & program linking WITHOUT querying COMPILE_STATUS or LINK_STATUS yet
+  // so Chrome/ANGLE compiles asynchronously on background GPU threads without stalling the main thread.
+  const vs = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vs, VERTEX_SRC);
+  gl.compileShader(vs);
 
-  program = gl.createProgram();
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
+  const fs = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fs, fragSource);
+  gl.compileShader(fs);
+
+  const pendingProgram = gl.createProgram();
+  gl.attachShader(pendingProgram, vs);
+  gl.attachShader(pendingProgram, fs);
+  gl.linkProgram(pendingProgram);
+  gl.flush();
+
+  if (parallelExt) {
+    while (!gl.getProgramParameter(pendingProgram, parallelExt.COMPLETION_STATUS_KHR)) {
+      await nextFrame();
+    }
+  } else {
+    await yieldTwoFrames();
+  }
+
+  const linked = gl.getProgramParameter(pendingProgram, gl.LINK_STATUS);
+  if (!linked) {
+    const vsOk = gl.getShaderParameter(vs, gl.COMPILE_STATUS);
+    const fsOk = gl.getShaderParameter(fs, gl.COMPILE_STATUS);
+    const errInfo =
+      (!vsOk && gl.getShaderInfoLog(vs)) ||
+      (!fsOk && gl.getShaderInfoLog(fs)) ||
+      gl.getProgramInfoLog(pendingProgram) ||
+      'Program link failed';
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    gl.deleteProgram(pendingProgram);
+    throw new Error(errInfo);
+  }
+
   gl.deleteShader(vs);
   gl.deleteShader(fs);
 
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(gl.getProgramInfoLog(program) || 'Program link failed');
-  }
+  setLoadingStage('Warming GPU pipeline…', 0.94);
+  await yieldTwoFrames();
 
+  program = pendingProgram;
   vao = gl.createVertexArray();
   uniforms = {
     iResolution: gl.getUniformLocation(program, 'iResolution'),
@@ -386,6 +464,24 @@ async function initShader() {
     iMouse: gl.getUniformLocation(program, 'iMouse'),
     iDate: gl.getUniformLocation(program, 'iDate'),
   };
+  shaderReady = true;
+
+  renderShaderFrame(filmVideo.currentTime || 0, 1 / 60);
+  gl.flush();
+  await nextFrame();
+
+  isCompiling = false;
+  const compileMs = Math.round(performance.now() - compileStartPerf);
+  if (shaderLoadingBar) {
+    shaderLoadingBar.style.transform = 'scaleX(1)';
+  }
+  if (shaderLoadingTime) {
+    shaderLoadingTime.textContent = `${(compileMs * 0.001).toFixed(1)}s`;
+  }
+  if (shaderLoading) {
+    shaderLoading.classList.add('is-loaded');
+    shaderLoading.setAttribute('aria-hidden', 'true');
+  }
 
   const dbg = gl.getExtension('WEBGL_debug_renderer_info');
   const gpuRenderer = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
@@ -393,6 +489,9 @@ async function initShader() {
   // Non-visual inspection hooks for automated testing and frame verification
   window.__shaderStudio = {
     ready: true,
+    compiling: false,
+    compileMs,
+    parallelCompile: Boolean(parallelExt),
     gpuRenderer,
     resolution: [CANVAS_W, CANVAS_H],
     getFps: () => smoothedFps,
@@ -419,7 +518,7 @@ function getShaderMouseVec4() {
 }
 
 function renderShaderFrame(timeSec, dt) {
-  if (!gl || !program) return;
+  if (!shaderReady || !gl || !program) return;
   gl.viewport(0, 0, CANVAS_W, CANVAS_H);
   gl.useProgram(program);
   gl.bindVertexArray(vao);
@@ -467,10 +566,16 @@ filmVideo.addEventListener('seeked', () => {
 
 initShader()
   .then(() => {
-    renderShaderFrame(filmVideo.currentTime || 0, 1 / 60);
+    lastWallTime = performance.now();
+    smoothedFps = 60.0;
     requestAnimationFrame(tick);
   })
   .catch((err) => {
+    isCompiling = false;
     console.error(err);
-    window.__shaderStudio = { ready: false, error: String(err) };
+    if (shaderLoading) {
+      shaderLoading.classList.add('has-error');
+    }
+    setLoadingStage('Shader compilation failed', 0);
+    window.__shaderStudio = { ready: false, compiling: false, error: String(err) };
   });

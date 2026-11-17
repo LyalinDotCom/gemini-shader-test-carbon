@@ -221,16 +221,17 @@ body {
   top: 10px;
   padding: 3px 8px;
   border-radius: 4px;
-  background: rgba(11, 11, 12, 0.68);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(242, 237, 228, 0.1);
+  background: rgba(11, 11, 12, 0.74);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(242, 237, 228, 0.12);
   font-family: var(--font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-secondary);
   pointer-events: none;
-  z-index: 3;
+  z-index: 4;
 }
 
 .badge-left {
@@ -239,6 +240,202 @@ body {
 
 .badge-right {
   right: 10px;
+}
+
+/* File-size badges on Main Stage panes */
+.size-badge {
+  position: absolute;
+  bottom: 10px;
+  padding: 3.5px 8.5px;
+  border-radius: 4px;
+  background: rgba(11, 11, 12, 0.78);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(242, 237, 228, 0.13);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
+  font-family: var(--font-mono);
+  font-size: 0.67rem;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.015em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.size-badge-film {
+  left: 10px;
+}
+
+.size-badge-shader {
+  right: 10px;
+  border-color: rgba(229, 154, 60, 0.26);
+}
+
+.size-val {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.size-dim {
+  color: var(--text-secondary);
+}
+
+.size-sep {
+  color: var(--text-muted);
+}
+
+.size-accent {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Async GPU shader compilation overlay */
+@keyframes shaderSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.shader-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 44%, #151518 0%, var(--bg-root) 74%);
+  pointer-events: none;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 240ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0ms linear 240ms;
+}
+
+.shader-loading.is-loaded {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.shader-loading.is-loaded .shader-spinner {
+  animation: none;
+}
+
+.stage-viewport.is-wipe .shader-loading {
+  z-index: 3;
+  left: var(--wipe-pct, 50%);
+  right: 0;
+}
+
+.shader-loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(268px, 100%);
+  min-width: 0;
+  text-align: center;
+}
+
+.shader-spinner-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.shader-spinner {
+  display: block;
+  animation: shaderSpin 1.05s linear infinite;
+  will-change: transform;
+}
+
+.shader-spinner-track {
+  stroke: rgba(242, 237, 228, 0.1);
+}
+
+.shader-spinner-arc {
+  stroke: var(--accent);
+}
+
+.shader-loading.has-error .shader-spinner {
+  animation: none;
+}
+
+.shader-loading.has-error .shader-spinner-arc {
+  stroke: #d96b52;
+}
+
+.shader-loading-stage {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  color: var(--text-primary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shader-loading-track {
+  position: relative;
+  width: 100%;
+  max-width: 216px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(242, 237, 228, 0.09);
+  overflow: hidden;
+}
+
+.shader-loading-bar {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(0.08);
+  will-change: transform;
+}
+
+.shader-loading-meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.shader-loading-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shader-loading-dot {
+  color: var(--text-muted);
+}
+
+.shader-loading-time {
+  color: var(--accent);
+  font-weight: 500;
+  min-width: 3.1ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Wipe mode */
@@ -259,16 +456,27 @@ body {
   inset: 0;
   border: none;
   border-radius: 0;
+  background: transparent;
 }
 
 .stage-viewport.is-wipe .pane-film {
-  z-index: 1;
   pointer-events: none;
 }
 
-.stage-viewport.is-wipe .pane-shader {
+.stage-viewport.is-wipe .pane-film video {
+  position: relative;
+  z-index: 1;
+}
+
+.stage-viewport.is-wipe .pane-shader canvas {
+  position: relative;
   z-index: 2;
   clip-path: inset(0 0 0 var(--wipe-pct, 50%));
+}
+
+.stage-viewport.is-wipe .pane-badge,
+.stage-viewport.is-wipe .size-badge {
+  z-index: 6;
 }
 
 /* Allow dragging anywhere on Wipe stage to orbit shader except on the divider */
@@ -475,6 +683,14 @@ body {
   padding-top: 6px;
 }
 
+.originals-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+}
+
 .section-heading {
   margin: 0;
   font-family: var(--font-mono);
@@ -483,6 +699,32 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-secondary);
+}
+
+.originals-size-pill {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 0.69rem;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.pill-strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.pill-accent {
+  color: var(--accent);
+  font-weight: 500;
 }
 
 .originals-grid {
@@ -521,6 +763,7 @@ body {
 }
 
 .clip-frame {
+  position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #060607;
@@ -532,6 +775,28 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.clip-size-badge {
+  position: absolute;
+  bottom: 7px;
+  right: 7px;
+  padding: 2px 6.5px;
+  border-radius: 4px;
+  background: rgba(11, 11, 12, 0.78);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(242, 237, 228, 0.13);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.36);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.015em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .clip-meta {
@@ -570,6 +835,48 @@ body {
 }
 
 @media (max-width: 560px) {
+  .size-badge {
+    font-size: 0.62rem;
+    padding: 3px 7px;
+    bottom: 8px;
+  }
+
+  .size-badge-film {
+    left: 8px;
+  }
+
+  .size-badge-shader {
+    right: 8px;
+  }
+
+  .stage-viewport.is-wipe .size-badge-shader {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    padding: 3px 6.5px;
+  }
+
+  .stage-viewport.is-wipe .size-badge-shader .size-sep {
+    display: none;
+  }
+
+  .shader-loading {
+    padding: 12px;
+  }
+
+  .shader-loading-inner {
+    gap: 7px;
+  }
+
+  .shader-loading-stage {
+    font-size: 0.68rem;
+  }
+
+  .originals-size-pill {
+    font-size: 0.65rem;
+    padding: 4px 8px;
+  }
+
   .transport-primary {
     flex-wrap: wrap;
   }
