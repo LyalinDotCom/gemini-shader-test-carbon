@@ -1,0 +1,13 @@
+{
+  "name": "gemini-video-2-glsl",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Five-scene Gemini Omni 1.2 Flash film recreated as one procedural Shadertoy GLSL shader.",
+  "scripts": {
+    "start": "node server.mjs",
+    "bundle": "python3 shader-skills/skills/shader-art-coding/scripts/glsl_tools.py bundle shaders/film.glsl -o public/shader.glsl",
+    "check": "python3 shader-skills/skills/shader-art-coding/scripts/glsl_tools.py check shaders/film.glsl public/shader.glsl",
+    "build": "npm run bundle && npm run check"
+  }
+}

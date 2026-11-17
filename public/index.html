@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gemini Video 2 GLSL</title>
+  <meta name="description" content="Side-by-side and wipe comparison of a five-scene Gemini video film recreated as a single procedural Shadertoy GLSL shader." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header" id="site-header">
+      <h1 class="site-title">Gemini Video 2 GLSL</h1>
+      <p class="site-credit">
+        Built with Gemini models and tools with the help of
+        <a href="https://github.com/gokayfem/shader-skills" target="_blank" rel="noopener noreferrer">shader-art-coding (gokayfem/shader-skills)</a>
+      </p>
+    </header>
+
+    <main class="main-content">
+      <section class="stage-section" aria-label="Comparison stage">
+        <div class="stage-controls">
+          <div class="mode-switch" role="group" aria-label="Comparison view mode">
+            <button type="button" id="mode-sbs-btn" class="mono-btn is-active" aria-pressed="true">Side-by-Side</button>
+            <button type="button" id="mode-wipe-btn" class="mono-btn" aria-pressed="false">Wipe</button>
+          </div>
+          <button type="button" id="reset-orbit-btn" class="mono-btn reset-btn" hidden>Reset Orbit</button>
+        </div>
+
+        <div id="stage-viewport" class="stage-viewport is-sbs" style="--wipe-pct: 50%;">
+          <div id="pane-film" class="stage-pane pane-film">
+            <video id="film-video" src="/film.mp4" loop playsinline preload="auto"></video>
+            <span class="pane-badge badge-left">Film</span>
+          </div>
+
+          <div id="pane-shader" class="stage-pane pane-shader">
+            <canvas id="shader-canvas" width="1280" height="720" aria-label="Live procedural GLSL shader"></canvas>
+            <span class="pane-badge badge-right">GLSL</span>
+          </div>
+
+          <div id="wipe-divider" class="wipe-divider" role="slider" tabindex="0" aria-label="Wipe comparison divider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+            <div class="wipe-line"></div>
+            <div class="wipe-handle" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M4.5 3.5L1.5 7L4.5 10.5M9.5 3.5L12.5 7L9.5 10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="transport-bar" aria-label="Playback transport">
+        <div class="transport-primary">
+          <button type="button" id="play-pause-btn" class="mono-btn play-btn" aria-label="Play or pause">
+            <svg id="icon-play" width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+              <path d="M2.5 1.75L10.25 6L2.5 10.25V1.75Z" />
+            </svg>
+            <svg id="icon-pause" width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true" hidden>
+              <rect x="2.2" y="1.75" width="2.6" height="8.5" rx="0.6" />
+              <rect x="7.2" y="1.75" width="2.6" height="8.5" rx="0.6" />
+            </svg>
+            <span id="play-pause-label">Play</span>
+          </button>
+
+          <div class="scrubber-wrap">
+            <input
+              type="range"
+              id="scrubber"
+              class="scrubber-input"
+              min="0"
+              max="25"
+              step="0.001"
+              value="0"
+              aria-label="Timeline scrubber"
+            />
+            <div class="scrubber-ticks" aria-hidden="true">
+              <span style="left: 20%"></span>
+              <span style="left: 40%"></span>
+              <span style="left: 60%"></span>
+              <span style="left: 80%"></span>
+            </div>
+          </div>
+
+          <output id="timecode" class="timecode" for="scrubber">00:00.0 / 00:25.0</output>
+        </div>
+
+        <div class="scene-nav" role="group" aria-label="Scenes">
+          <button type="button" class="mono-btn scene-btn is-active" data-scene="0" data-time="0">
+            <span class="scene-num">I</span><span>Space</span>
+          </button>
+          <button type="button" class="mono-btn scene-btn" data-scene="1" data-time="5">
+            <span class="scene-num">II</span><span>Forest</span>
+          </button>
+          <button type="button" class="mono-btn scene-btn" data-scene="2" data-time="10">
+            <span class="scene-num">III</span><span>Ocean</span>
+          </button>
+          <button type="button" class="mono-btn scene-btn" data-scene="3" data-time="15">
+            <span class="scene-num">IV</span><span>Desert</span>
+          </button>
+          <button type="button" class="mono-btn scene-btn" data-scene="4" data-time="20">
+            <span class="scene-num">V</span><span>Cavern</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="originals-section" aria-labelledby="originals-heading">
+        <h2 id="originals-heading" class="section-heading">Original Videos</h2>
+        <div class="originals-grid">
+          <button type="button" class="clip-card is-active" id="clip-card-0" data-scene="0" data-time="0">
+            <div class="clip-frame">
+              <video src="/raw_clips/01_space.mp4" muted loop playsinline preload="metadata"></video>
+            </div>
+            <div class="clip-meta">
+              <span class="clip-num">I</span>
+              <span class="clip-name">Space</span>
+            </div>
+          </button>
+
+          <button type="button" class="clip-card" id="clip-card-1" data-scene="1" data-time="5">
+            <div class="clip-frame">
+              <video src="/raw_clips/02_forest.mp4" muted loop playsinline preload="metadata"></video>
+            </div>
+            <div class="clip-meta">
+              <span class="clip-num">II</span>
+              <span class="clip-name">Forest</span>
+            </div>
+          </button>
+
+          <button type="button" class="clip-card" id="clip-card-2" data-scene="2" data-time="10">
+            <div class="clip-frame">
+              <video src="/raw_clips/03_ocean.mp4" muted loop playsinline preload="metadata"></video>
+            </div>
+            <div class="clip-meta">
+              <span class="clip-num">III</span>
+              <span class="clip-name">Ocean</span>
+            </div>
+          </button>
+
+          <button type="button" class="clip-card" id="clip-card-3" data-scene="3" data-time="15">
+            <div class="clip-frame">
+              <video src="/raw_clips/04_desert.mp4" muted loop playsinline preload="metadata"></video>
+            </div>
+            <div class="clip-meta">
+              <span class="clip-num">IV</span>
+              <span class="clip-name">Desert</span>
+            </div>
+          </button>
+
+          <button type="button" class="clip-card" id="clip-card-4" data-scene="4" data-time="20">
+            <div class="clip-frame">
+              <video src="/raw_clips/05_cavern.mp4" muted loop playsinline preload="metadata"></video>
+            </div>
+            <div class="clip-meta">
+              <span class="clip-num">V</span>
+              <span class="clip-name">Cavern</span>
+            </div>
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
